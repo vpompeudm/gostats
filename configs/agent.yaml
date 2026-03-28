@@ -1,0 +1,6 @@
+memory:
+  enable: true
+  evalRate: 1000
+  metrics:
+    - MemTotal
+    - MemAvailable
