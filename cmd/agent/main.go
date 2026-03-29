@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -37,12 +38,15 @@ func LoadCollectors(path string) (*Collectors, error) {
 }
 
 func main() {
-	cfg, err := LoadCollectors("config.yaml")
+	cfg, err := LoadCollectors("./configs/agent.yaml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
 	if cfg.Memory.Enable {
 		memc := make(chan map[string]string)
 		go cfg.Memory.Collect(memc)
+		for range 10 {
+			fmt.Println(<-memc)
+		}
 	}
 }

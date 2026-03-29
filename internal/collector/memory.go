@@ -2,15 +2,16 @@ package memory
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"strings"
 	"time"
 )
 
 type Config struct {
-	Enable   bool
-	EvalRate int
-	Metrics  []string
+	Enable   bool     `yaml:"enable"`
+	EvalRate int      `yaml:"evalRate"`
+	Metrics  []string `yaml:"metrics"`
 }
 
 func readMemory(metrics map[string]bool) (map[string]string, error) {
@@ -33,7 +34,7 @@ func readMemory(metrics map[string]bool) (map[string]string, error) {
 		key := strings.TrimSpace(strings.Replace(parts[0], ":", "", 1))
 		value := strings.TrimSpace(parts[1])
 
-		if err == nil && metrics[key] {
+		if metrics[key] {
 			stats[key] = value
 		}
 	}
@@ -41,20 +42,23 @@ func readMemory(metrics map[string]bool) (map[string]string, error) {
 	return stats, scanner.Err()
 }
 
-func (cfg Config) Collect(memc chan map[string]string) error {
+func (cfg Config) Collect(memc chan map[string]string) {
 	ticker := time.NewTicker(time.Duration(cfg.EvalRate) * time.Millisecond)
+	defer ticker.Stop()
+
 	metrics := make(map[string]bool)
 	for _, m := range cfg.Metrics {
 		metrics[m] = true
 	}
-	for {
-		select {
-		case t := <-ticker.C:
-			stats, err := readMemory(metrics)
-			if err != nil {
-				stats["datetime"] = t.Format(time.RFC3339)
-				memc <- stats
-			}
+
+	for t := range ticker.C {
+		stats, err := readMemory(metrics)
+		if err != nil {
+			log.Printf("Failed to collect memory stats: %v", err)
+			continue
 		}
+
+		stats["datetime"] = t.Format(time.RFC3339)
+		memc <- stats
 	}
 }
