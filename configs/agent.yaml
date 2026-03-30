@@ -1,6 +1,8 @@
 memory:
   enable: true
-  evalRate: 1000
+  evalRate: 500
+  batchSize: 10 
+  flushInterval: 10000 
   metrics:
     - MemTotal
     - MemAvailable
